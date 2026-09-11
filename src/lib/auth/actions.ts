@@ -16,12 +16,16 @@ export async function signUpAction(
   const password = String(formData.get("password") ?? "");
   const displayName = String(formData.get("displayName") ?? "").trim();
   const location = String(formData.get("location") ?? "").trim();
+  const agreeToTerms = formData.get("agreeToTerms") === "on";
 
   if (!email || !password || !displayName) {
     return { error: "Email, password, and name are required." };
   }
   if (password.length < 8) {
     return { error: "Password must be at least 8 characters." };
+  }
+  if (!agreeToTerms) {
+    return { error: "You must agree to the Terms of Service and Privacy Policy." };
   }
 
   const supabase = await createClient();

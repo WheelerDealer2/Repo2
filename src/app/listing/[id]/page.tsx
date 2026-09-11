@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PhotoGallery } from "./PhotoGallery";
@@ -6,6 +7,35 @@ import { ContactSellerPanel } from "./ContactSellerPanel";
 import { FavoriteButton } from "@/components/FavoriteButton";
 
 const PHOTO_URL_TTL_SECONDS = 60 * 60;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = await createClient();
+
+  const { data: listing } = await supabase
+    .from("listings")
+    .select("make, model, year, price, location, description")
+    .eq("id", id)
+    .eq("status", "active")
+    .single();
+
+  if (!listing) {
+    return { title: "Listing — Wheeler Dealer" };
+  }
+
+  const title = `${listing.year} ${listing.make} ${listing.model} — $${listing.price.toLocaleString()} | Wheeler Dealer`;
+  const description = `${listing.location} · ${listing.description.slice(0, 150)}`;
+
+  return {
+    title,
+    description,
+    openGraph: { title, description },
+  };
+}
 
 export default async function ListingDetailPage({
   params,

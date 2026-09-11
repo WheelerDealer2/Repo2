@@ -98,6 +98,21 @@ export function SignupForm() {
         <p className="mt-1 text-xs text-[#5a5d61]">At least 8 characters.</p>
       </div>
 
+      <label className="flex items-start gap-2 text-sm text-[#5a5d61]">
+        <input type="checkbox" name="agreeToTerms" required className="mt-0.5" />
+        <span>
+          I agree to the{" "}
+          <Link href="/terms" target="_blank" className="font-semibold text-signal-dark hover:underline">
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" target="_blank" className="font-semibold text-signal-dark hover:underline">
+            Privacy Policy
+          </Link>
+          .
+        </span>
+      </label>
+
       <SubmitButton />
 
       <p className="text-sm text-[#5a5d61]">

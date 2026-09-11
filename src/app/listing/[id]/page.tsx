@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PhotoGallery } from "./PhotoGallery";
-import { ContactSellerButton } from "./ContactSellerButton";
+import { ContactSellerPanel } from "./ContactSellerPanel";
 
 const PHOTO_URL_TTL_SECONDS = 60 * 60;
 
@@ -115,7 +115,12 @@ export default async function ListingDetailPage({
               <div className="text-xs text-[#5a5d61]">{seller?.location ?? listing.location}</div>
             </div>
           </div>
-          <ContactSellerButton />
+          <ContactSellerPanel
+            listingId={listing.id}
+            sellerId={listing.seller_id}
+            currentUserId={user?.id ?? null}
+            isOwner={isOwner}
+          />
         </div>
       </div>
     </div>

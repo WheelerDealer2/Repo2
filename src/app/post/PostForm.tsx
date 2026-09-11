@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -28,6 +28,13 @@ export function PostForm({ sellerId }: { sellerId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<{ make: string; model: string; photoCount: number } | null>(null);
 
+  // Object URLs derived from the current file list; revoked whenever the
+  // list changes or the form unmounts, so we don't leak memory.
+  const previews = useMemo(() => photos.map((f) => URL.createObjectURL(f)), [photos]);
+  useEffect(() => {
+    return () => previews.forEach((url) => URL.revokeObjectURL(url));
+  }, [previews]);
+
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
 
@@ -48,6 +55,10 @@ export function PostForm({ sellerId }: { sellerId: string }) {
 
     setError(null);
     setPhotos(files);
+  }
+
+  function removePhoto(index: number) {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -210,8 +221,23 @@ export function PostForm({ sellerId }: { sellerId: string }) {
           onChange={handlePhotoChange}
           className="w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-paper-dim file:px-3 file:py-2 file:text-sm file:font-semibold"
         />
-        {photos.length > 0 && (
-          <p className="mt-1 text-xs text-[#5a5d61]">{photos.length} photo(s) selected.</p>
+        {previews.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-2.5">
+            {previews.map((url, i) => (
+              <div key={url} className="group relative h-20 w-20 overflow-hidden rounded-md border border-line">
+                {/* eslint-disable-next-line @next/next/no-img-element -- local blob preview, not a remote/static asset */}
+                <img src={url} alt={`Preview ${i + 1}`} className="h-full w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => removePhoto(i)}
+                  aria-label={`Remove photo ${i + 1}`}
+                  className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-ink/70 text-xs font-bold text-white hover:bg-ink"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
         )}
       </Field>
 

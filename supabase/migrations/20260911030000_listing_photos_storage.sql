@@ -8,9 +8,9 @@ insert into storage.buckets (id, name, public)
 values ('listings', 'listings', false)
 on conflict (id) do nothing;
 
--- storage.objects has RLS enabled by default on Supabase projects; this
--- is just belt-and-suspenders in case that's ever not true.
-alter table storage.objects enable row level security;
+-- storage.objects already has RLS enabled by default on Supabase projects,
+-- and that table is owned by supabase_storage_admin, not postgres, so we
+-- can't (and don't need to) ALTER TABLE it here — only add policies.
 
 drop policy if exists "listings_bucket_select" on storage.objects;
 create policy "listings_bucket_select"

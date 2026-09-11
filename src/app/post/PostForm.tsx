@@ -159,7 +159,7 @@ export function PostForm({ sellerId }: { sellerId: string }) {
             className={inputClass}
           />
         </Field>
-        <Field label="Price (USD)">
+        <Field label="Price (AUD)">
           <input name="price" type="number" required min={0} placeholder="18500" className={inputClass} />
         </Field>
       </div>

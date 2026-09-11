@@ -40,7 +40,7 @@ create table if not exists listing_payments (
   stripe_checkout_session_id text not null,
   stripe_payment_intent_id text,
   amount_cents int not null,
-  currency text not null default 'usd',
+  currency text not null default 'aud',
   status text not null default 'pending'
     check (status in ('pending', 'paid', 'failed', 'refunded')),
   created_at timestamptz not null default now(),

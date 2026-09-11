@@ -1,7 +1,10 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { signOutAction } from "@/lib/auth/actions";
 import { createCheckoutSessionAction } from "@/lib/stripe/actions";
+import { MarkSoldButton } from "@/components/MarkSoldButton";
+import { DeleteListingButton } from "@/components/DeleteListingButton";
 
 export default async function AccountPage() {
   const supabase = await createClient();
@@ -48,16 +51,18 @@ export default async function AccountPage() {
         {myListings.length > 0 && (
           <div className="mt-6 border-t border-line pt-4">
             <p className="mb-2 text-sm font-semibold text-asphalt">Your listings</p>
-            <ul className="space-y-1.5">
+            <ul className="space-y-3">
               {myListings.map((l) => (
-                <li key={l.id} className="flex items-center justify-between text-sm">
-                  <span className="font-mono">
-                    {l.year} {l.make} {l.model}
-                  </span>
-                  <span className="flex items-center gap-2">
+                <li key={l.id} className="rounded-md border border-line px-3 py-2.5">
+                  <div className="flex items-center justify-between text-sm">
+                    <Link href={`/listing/${l.id}`} className="font-mono font-semibold hover:underline">
+                      {l.year} {l.make} {l.model}
+                    </Link>
                     <span className="rounded bg-paper-dim px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-asphalt">
                       {l.status.replace("_", " ")}
                     </span>
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
                     {l.status === "pending_payment" && (
                       <form action={createCheckoutSessionAction.bind(null, l.id)}>
                         <button
@@ -68,7 +73,15 @@ export default async function AccountPage() {
                         </button>
                       </form>
                     )}
-                  </span>
+                    <Link
+                      href={`/listing/${l.id}/edit`}
+                      className="rounded border border-line px-2 py-0.5 text-xs font-semibold text-asphalt hover:bg-paper-dim"
+                    >
+                      Edit
+                    </Link>
+                    {l.status === "active" && <MarkSoldButton listingId={l.id} />}
+                    <DeleteListingButton listingId={l.id} label={`${l.year} ${l.make} ${l.model}`} />
+                  </div>
                 </li>
               ))}
             </ul>

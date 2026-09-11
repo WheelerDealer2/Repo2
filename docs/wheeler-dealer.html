@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wheeler Dealer — Buy & Sell Cars</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+:root{
+  --ink:#16181A;
+  --asphalt:#2B2E33;
+  --paper:#EDEBE4;
+  --paper-dim:#E2DFD6;
+  --signal:#2F6FED;
+  --signal-dark:#1F52C0;
+  --caution:#F2B705;
+  --rust:#C1440E;
+  --line:#CFCBBE;
+  --white:#FFFFFF;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  font-family:'IBM Plex Sans',sans-serif;
+  background:var(--paper);
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:'IBM Plex Mono',monospace;}
+.display{font-family:'Big Shoulders Display',sans-serif;font-weight:800;letter-spacing:0.3px;}
+
+/* ---------- NAV ---------- */
+.nav{
+  background:var(--ink);
+  color:var(--paper);
+  padding:14px 24px;
+  display:flex;
+  align-items:center;
+  gap:20px;
+  flex-wrap:wrap;
+  position:sticky;
+  top:0;
+  z-index:50;
+}
+.logo{
+  font-family:'Big Shoulders Display',sans-serif;
+  font-weight:800;
+  font-size:26px;
+  letter-spacing:0.5px;
+  color:var(--white);
+  cursor:pointer;
+  white-space:nowrap;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.logo svg{flex-shrink:0;}
+.search-wrap{
+  flex:1;
+  min-width:180px;
+  display:flex;
+  align-items:center;
+  background:#232629;
+  border:1px solid #3a3d42;
+  border-radius:6px;
+  padding:9px 12px;
+  gap:8px;
+}
+.search-wrap input{
+  background:none;
+  border:none;
+  outline:none;
+  color:var(--paper);
+  font-family:'IBM Plex Sans',sans-serif;
+  font-size:14px;
+  width:100%;
+}
+.search-wrap input::placeholder{color:#8a8d92;}
+.btn-post{
+  background:var(--signal);
+  color:white;
+  border:none;
+  padding:10px 18px;
+  border-radius:6px;
+  font-family:'IBM Plex Sans',sans-serif;
+  font-weight:600;
+  font-size:14px;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:background .15s;
+}
+.btn-post:hover{background:var(--signal-dark);}
+
+/* ---------- LAYOUT ---------- */
+.page{max-width:1180px;margin:0 auto;padding:28px 24px 80px;}
+.layout{display:grid;grid-template-columns:220px 1fr;gap:28px;}
+@media (max-width:800px){.layout{grid-template-columns:1fr;}}
+
+/* ---------- FILTERS ---------- */
+.filters{
+  background:var(--white);
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:20px;
+  height:fit-content;
+  position:sticky;
+  top:80px;
+}
+.filters h3{
+  font-family:'Big Shoulders Display',sans-serif;
+  font-weight:700;
+  font-size:18px;
+  margin:0 0 16px;
+  text-transform:none;
+}
+.filter-group{margin-bottom:18px;}
+.filter-group label{
+  display:block;
+  font-size:12px;
+  font-weight:600;
+  color:#5a5d61;
+  margin-bottom:6px;
+}
+.filter-group select, .filter-group input[type="number"]{
+  width:100%;
+  padding:8px 10px;
+  border:1px solid var(--line);
+  border-radius:5px;
+  font-family:'IBM Plex Sans',sans-serif;
+  font-size:13px;
+  background:var(--white);
+  color:var(--ink);
+}
+.range-row{display:flex;gap:8px;}
+.clear-btn{
+  width:100%;
+  background:none;
+  border:1px solid var(--line);
+  padding:8px;
+  border-radius:5px;
+  font-size:13px;
+  font-weight:600;
+  color:var(--asphalt);
+  cursor:pointer;
+  margin-top:4px;
+}
+.clear-btn:hover{background:var(--paper-dim);}
+
+/* ---------- RESULTS HEADER ---------- */
+.results-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  margin-bottom:16px;
+}
+.results-count{font-size:14px;color:#5a5d61;}
+.sort-select{
+  border:1px solid var(--line);
+  border-radius:5px;
+  padding:6px 10px;
+  font-size:13px;
+  background:var(--white);
+}
+
+/* ---------- CARD GRID ---------- */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:18px;
+}
+@media (max-width:900px){.grid{grid-template-columns:repeat(2,1fr);}}
+@media (max-width:600px){.grid{grid-template-columns:1fr;}}
+
+.card{
+  background:var(--white);
+  border:1px solid var(--line);
+  border-radius:8px;
+  overflow:hidden;
+  cursor:pointer;
+  transition:border-color .15s, transform .1s;
+  display:flex;
+  flex-direction:column;
+}
+.card:hover{border-color:var(--asphalt);}
+.card-media{
+  height:140px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+}
+.card-tag{
+  position:absolute;
+  top:10px;
+  left:10px;
+  font-size:11px;
+  font-weight:700;
+  padding:3px 9px;
+  border-radius:3px;
+  text-transform:uppercase;
+  letter-spacing:0.4px;
+}
+.tag-new{background:var(--caution);color:var(--ink);}
+.tag-drop{background:var(--rust);color:white;}
+.card-body{padding:14px 16px 16px;border-top:1px solid var(--line);}
+.card-title{
+  font-family:'Big Shoulders Display',sans-serif;
+  font-weight:700;
+  font-size:20px;
+  margin:0 0 2px;
+  line-height:1.1;
+}
+.card-price{
+  font-family:'IBM Plex Mono',monospace;
+  font-weight:600;
+  font-size:18px;
+  color:var(--signal-dark);
+  margin-bottom:10px;
+}
+.spec-row{display:flex;flex-direction:column;gap:5px;}
+.spec-item{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  font-size:12.5px;
+  color:#5a5d61;
+}
+.spec-item svg{flex-shrink:0;opacity:0.65;}
+
+/* ---------- EMPTY STATE ---------- */
+.empty{
+  text-align:center;
+  padding:60px 20px;
+  color:#5a5d61;
+}
+.empty svg{margin-bottom:14px;opacity:0.4;}
+.empty h3{font-family:'Big Shoulders Display',sans-serif;font-size:22px;color:var(--ink);margin:0 0 6px;}
+
+/* ---------- DETAIL VIEW ---------- */
+.back-link{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  font-size:14px;
+  font-weight:600;
+  color:var(--asphalt);
+  cursor:pointer;
+  margin-bottom:18px;
+  background:none;
+  border:none;
+  padding:0;
+}
+.detail-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:32px;}
+@media (max-width:800px){.detail-grid{grid-template-columns:1fr;}}
+.detail-media{
+  height:320px;
+  border-radius:10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin-bottom:16px;
+}
+.detail-title{
+  font-family:'Big Shoulders Display',sans-serif;
+  font-weight:800;
+  font-size:34px;
+  margin:0 0 6px;
+  line-height:1.05;
+}
+.detail-price{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:26px;
+  font-weight:600;
+  color:var(--signal-dark);
+  margin-bottom:18px;
+}
+.spec-sheet{
+  border:1px solid var(--line);
+  border-radius:8px;
+  overflow:hidden;
+  margin-bottom:20px;
+}
+.spec-sheet-row{
+  display:flex;
+  justify-content:space-between;
+  padding:11px 16px;
+  font-size:13.5px;
+  border-bottom:1px solid var(--line);
+}
+.spec-sheet-row:last-child{border-bottom:none;}
+.spec-sheet-row span:first-child{color:#5a5d61;}
+.spec-sheet-row span:last-child{font-family:'IBM Plex Mono',monospace;font-weight:600;}
+.description{font-size:14.5px;line-height:1.6;color:#3a3d42;margin-bottom:24px;}
+
+.contact-panel{
+  background:var(--white);
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:22px;
+  height:fit-content;
+}
+.contact-panel h4{
+  font-family:'Big Shoulders Display',sans-serif;
+  font-size:18px;
+  margin:0 0 14px;
+}
+.seller-row{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.seller-avatar{
+  width:38px;height:38px;border-radius:50%;
+  background:var(--asphalt);color:white;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Big Shoulders Display',sans-serif;font-weight:700;font-size:16px;
+}
+.seller-name{font-weight:600;font-size:14px;}
+.seller-loc{font-size:12px;color:#5a5d61;}
+.btn-contact{
+  width:100%;
+  background:var(--signal);
+  color:white;
+  border:none;
+  padding:12px;
+  border-radius:6px;
+  font-weight:600;
+  font-size:14.5px;
+  cursor:pointer;
+  margin-bottom:10px;
+}
+.btn-contact:hover{background:var(--signal-dark);}
+.reveal-info{
+  font-size:13px;
+  padding:10px 12px;
+  background:var(--paper-dim);
+  border-radius:6px;
+  margin-top:10px;
+  display:none;
+}
+.reveal-info.show{display:block;}
+
+/* ---------- POST FORM ---------- */
+.form-wrap{max-width:640px;margin:0 auto;}
+.form-title{
+  font-family:'Big Shoulders Display',sans-serif;
+  font-weight:800;
+  font-size:32px;
+  margin:0 0 6px;
+}
+.form-sub{color:#5a5d61;font-size:14.5px;margin-bottom:28px;}
+.field{margin-bottom:18px;}
+.field label{
+  display:block;
+  font-size:13px;
+  font-weight:600;
+  margin-bottom:6px;
+  color:var(--asphalt);
+}
+.field input, .field select, .field textarea{
+  width:100%;
+  padding:11px 12px;
+  border:1px solid var(--line);
+  border-radius:6px;
+  font-family:'IBM Plex Sans',sans-serif;
+  font-size:14px;
+  background:var(--white);
+  color:var(--ink);
+}
+.field textarea{resize:vertical;min-height:90px;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media (max-width:520px){.field-row{grid-template-columns:1fr;}}
+.color-picker{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px;}
+.color-swatch{
+  width:34px;height:34px;border-radius:50%;
+  border:2px solid transparent;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.color-swatch.selected{border-color:var(--signal);}
+.btn-submit{
+  background:var(--ink);
+  color:white;
+  border:none;
+  padding:13px 28px;
+  border-radius:6px;
+  font-weight:600;
+  font-size:15px;
+  cursor:pointer;
+  margin-top:8px;
+}
+.btn-submit:hover{background:#000;}
+.success-banner{
+  background:#E8F4E8;
+  border:1px solid #a9d4a9;
+  color:#2c5c2c;
+  padding:14px 16px;
+  border-radius:6px;
+  font-size:14px;
+  font-weight:600;
+  margin-bottom:20px;
+  display:none;
+  align-items:center;
+  gap:8px;
+}
+.success-banner.show{display:flex;}
+
+.hidden{display:none !important;}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="logo" onclick="goTo('browse')">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h-2v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="17.5" r="2.5"/></svg>
+    Wheeler Dealer
+  </div>
+  <div class="search-wrap">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8a8d92" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input id="searchInput" placeholder="Search make, model, or keyword..." oninput="renderGrid()">
+  </div>
+  <button class="btn-post" onclick="goTo('post')">+ Post a listing</button>
+</nav>
+
+<div class="page">
+
+  <!-- BROWSE VIEW -->
+  <div id="view-browse">
+    <div class="layout">
+      <aside class="filters">
+        <h3>Filters</h3>
+        <div class="filter-group">
+          <label>Make</label>
+          <select id="f-make" onchange="renderGrid()">
+            <option value="">All makes</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Max price</label>
+          <input type="number" id="f-price" placeholder="No limit" oninput="renderGrid()">
+        </div>
+        <div class="filter-group">
+          <label>Min year</label>
+          <input type="number" id="f-year" placeholder="Any year" oninput="renderGrid()">
+        </div>
+        <div class="filter-group">
+          <label>Max mileage</label>
+          <input type="number" id="f-mileage" placeholder="No limit" oninput="renderGrid()">
+        </div>
+        <button class="clear-btn" onclick="clearFilters()">Clear filters</button>
+      </aside>
+
+      <div>
+        <div class="results-header">
+          <div class="results-count" id="resultsCount">— listings</div>
+          <select class="sort-select" id="sortSelect" onchange="renderGrid()">
+            <option value="newest">Newest first</option>
+            <option value="price-low">Price: low to high</option>
+            <option value="price-high">Price: high to low</option>
+            <option value="mileage-low">Mileage: low to high</option>
+          </select>
+        </div>
+        <div class="grid" id="grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DETAIL VIEW -->
+  <div id="view-detail" class="hidden">
+    <button class="back-link" onclick="goTo('browse')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      Back to listings
+    </button>
+    <div class="detail-grid" id="detailContent"></div>
+  </div>
+
+  <!-- POST VIEW -->
+  <div id="view-post" class="hidden">
+    <div class="form-wrap">
+      <button class="back-link" onclick="goTo('browse')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Back to listings
+      </button>
+      <div class="form-title">Post a listing</div>
+      <div class="form-sub">Fill in the details below — it'll appear in the marketplace right away.</div>
+      <div class="success-banner" id="successBanner">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        Listing posted! It's now live in the marketplace.
+      </div>
+      <form id="postForm" onsubmit="submitListing(event)">
+        <div class="field-row">
+          <div class="field">
+            <label>Make</label>
+            <input type="text" id="in-make" placeholder="e.g. Toyota" required>
+          </div>
+          <div class="field">
+            <label>Model</label>
+            <input type="text" id="in-model" placeholder="e.g. Corolla" required>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Year</label>
+            <input type="number" id="in-year" placeholder="2020" required min="1950" max="2026">
+          </div>
+          <div class="field">
+            <label>Price (USD)</label>
+            <input type="number" id="in-price" placeholder="18500" required min="0">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Mileage</label>
+            <input type="number" id="in-mileage" placeholder="42000" required min="0">
+          </div>
+          <div class="field">
+            <label>Location</label>
+            <input type="text" id="in-location" placeholder="City, State" required>
+          </div>
+        </div>
+        <div class="field">
+          <label>Color</label>
+          <div class="color-picker" id="colorPicker"></div>
+        </div>
+        <div class="field">
+          <label>Description</label>
+          <textarea id="in-desc" placeholder="Condition, service history, any details a buyer should know..." required></textarea>
+        </div>
+        <button type="submit" class="btn-submit">Post listing</button>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const COLORS = [
+  {name:'Charcoal', hex:'#2B2E33'},
+  {name:'Signal Blue', hex:'#2F6FED'},
+  {name:'Rust Red', hex:'#C1440E'},
+  {name:'Caution Yellow', hex:'#F2B705'},
+  {name:'Slate', hex:'#5a5d61'},
+  {name:'Paper White', hex:'#EDEBE4'},
+];
+
+const SAMPLE_LISTINGS = [
+  {id:'s1', make:'Toyota', model:'Corolla', year:2021, price:17800, mileage:23000, location:'Austin, TX', color:'#2F6FED', desc:'One owner, full service history, recent tires. Clean title, no accidents. Great commuter with excellent fuel economy.', seller:'Marcus D.', tag:'new', posted:6},
+  {id:'s2', make:'Honda', model:'Civic', year:2019, price:15200, mileage:41000, location:'Portland, OR', color:'#C1440E', desc:'Well maintained, new brakes and battery this year. Non-smoker vehicle, garage kept.', seller:'Aisha R.', tag:null, posted:5},
+  {id:'s3', make:'Ford', model:'F-150', year:2018, price:26500, mileage:58000, location:'Denver, CO', color:'#2B2E33', desc:'Work truck, tow package included, bed liner. Runs great, minor cosmetic wear consistent with age.', seller:'Tom H.', tag:'drop', posted:4},
+  {id:'s4', make:'Subaru', model:'Outback', year:2020, price:22900, mileage:31000, location:'Burlington, VT', color:'#5a5d61', desc:'AWD, roof rack, great for winter driving. Recent oil change and inspection.', seller:'Kate L.', tag:'new', posted:2},
+  {id:'s5', make:'Mazda', model:'CX-5', year:2017, price:14500, mileage:67000, location:'Raleigh, NC', color:'#F2B705', desc:'Reliable daily driver, sunroof, backup camera. Some minor scratches on rear bumper.', seller:'Devon P.', tag:null, posted:9},
+  {id:'s6', make:'Chevrolet', model:'Malibu', year:2019, price:13900, mileage:52000, location:'Columbus, OH', color:'#EDEBE4', desc:'Comfortable sedan, good on gas, recently detailed. Priced to sell quickly.', seller:'Sarah W.', tag:'drop', posted:1},
+  {id:'s7', make:'Volkswagen', model:'Jetta', year:2022, price:19800, mileage:14000, location:'Seattle, WA', color:'#2F6FED', desc:'Almost new condition, remainder of factory warranty included. Single owner.', seller:'Priya N.', tag:'new', posted:3},
+  {id:'s8', make:'Jeep', model:'Wrangler', year:2016, price:21400, mileage:74000, location:'Boise, ID', color:'#C1440E', desc:'Removable top, off-road tires, lift kit. Well loved but mechanically sound throughout.', seller:'Chris B.', tag:null, posted:12},
+  {id:'s9', make:'Hyundai', model:'Elantra', year:2021, price:16300, mileage:28000, location:'Tampa, FL', color:'#2B2E33', desc:'Fuel efficient, still under manufacturer warranty. Clean interior, no odors.', seller:'Nina F.', tag:null, posted:7},
+];
+
+let LISTINGS = [];
+let currentDetailId = null;
+
+function carIcon(color, size=64){
+  return `<svg width="${size}" height="${size*0.55}" viewBox="0 0 64 36" fill="none">
+    <path d="M6 26h-4v-9l4-8h28l10 8h4a4 4 0 0 1 4 4v5h-4" fill="${color}" opacity="0.15"/>
+    <path d="M6 26h-4v-9l4-8h28l10 8h4a4 4 0 0 1 4 4v5h-4" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="16" cy="26" r="5" fill="${color}"/>
+    <circle cx="16" cy="26" r="2" fill="white"/>
+    <circle cx="42" cy="26" r="5" fill="${color}"/>
+    <circle cx="42" cy="26" r="2" fill="white"/>
+  </svg>`;
+}
+
+function gaugeIcon(){return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M12 3a9 9 0 0 0-9 9c0 2.5 1 4.5 2.5 6M21 12a9 9 0 0 0-3-6.7"/></svg>`;}
+function calIcon(){return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;}
+function pinIcon(){return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`;}
+
+async function loadListings(){
+  let stored = [];
+  try{
+    const res = await window.storage.get('user-listings', false);
+    if(res && res.value) stored = JSON.parse(res.value);
+  }catch(e){ stored = []; }
+  LISTINGS = [...stored, ...SAMPLE_LISTINGS];
+  populateMakeFilter();
+  renderGrid();
+}
+
+async function saveListings(userListings){
+  try{
+    await window.storage.set('user-listings', JSON.stringify(userListings), false);
+  }catch(e){ console.error('Could not save listing', e); }
+}
+
+function populateMakeFilter(){
+  const makes = [...new Set(LISTINGS.map(l=>l.make))].sort();
+  const sel = document.getElementById('f-make');
+  sel.innerHTML = '<option value="">All makes</option>' + makes.map(m=>`<option value="${m}">${m}</option>`).join('');
+}
+
+function clearFilters(){
+  document.getElementById('f-make').value='';
+  document.getElementById('f-price').value='';
+  document.getElementById('f-year').value='';
+  document.getElementById('f-mileage').value='';
+  document.getElementById('searchInput').value='';
+  renderGrid();
+}
+
+function renderGrid(){
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const make = document.getElementById('f-make').value;
+  const maxPrice = parseFloat(document.getElementById('f-price').value);
+  const minYear = parseFloat(document.getElementById('f-year').value);
+  const maxMileage = parseFloat(document.getElementById('f-mileage').value);
+  const sort = document.getElementById('sortSelect').value;
+
+  let results = LISTINGS.filter(l=>{
+    if(q && !(`${l.make} ${l.model} ${l.location}`.toLowerCase().includes(q))) return false;
+    if(make && l.make !== make) return false;
+    if(!isNaN(maxPrice) && l.price > maxPrice) return false;
+    if(!isNaN(minYear) && l.year < minYear) return false;
+    if(!isNaN(maxMileage) && l.mileage > maxMileage) return false;
+    return true;
+  });
+
+  results.sort((a,b)=>{
+    if(sort==='price-low') return a.price-b.price;
+    if(sort==='price-high') return b.price-a.price;
+    if(sort==='mileage-low') return a.mileage-b.mileage;
+    return a.posted-b.posted; // newest first (lower "posted" = more recent, days ago)
+  });
+
+  document.getElementById('resultsCount').textContent = `${results.length} listing${results.length!==1?'s':''}`;
+
+  const grid = document.getElementById('grid');
+  if(results.length===0){
+    grid.innerHTML = '';
+    grid.parentElement.insertAdjacentHTML('beforeend', '');
+    document.getElementById('grid').outerHTML = `<div class="empty" id="grid">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <h3>No listings match those filters</h3>
+      <p>Try widening your search or clearing a filter.</p>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = results.map(l=>`
+    <div class="card" onclick="openDetail('${l.id}')">
+      <div class="card-media" style="background:${l.color}22;">
+        ${l.tag ? `<span class="card-tag ${l.tag==='new'?'tag-new':'tag-drop'}">${l.tag==='new'?'New listing':'Price drop'}</span>` : ''}
+        ${carIcon(l.color, 90)}
+      </div>
+      <div class="card-body">
+        <div class="card-title">${l.year} ${l.make} ${l.model}</div>
+        <div class="card-price mono">$${l.price.toLocaleString()}</div>
+        <div class="spec-row">
+          <div class="spec-item">${gaugeIcon()} ${l.mileage.toLocaleString()} miles</div>
+          <div class="spec-item">${pinIcon()} ${l.location}</div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openDetail(id){
+  currentDetailId = id;
+  const l = LISTINGS.find(x=>x.id===id);
+  const initials = l.seller.split(' ').map(w=>w[0]).join('');
+  document.getElementById('detailContent').innerHTML = `
+    <div>
+      <div class="detail-media" style="background:${l.color}22;">
+        ${carIcon(l.color, 200)}
+      </div>
+    </div>
+    <div>
+      <div class="detail-title">${l.year} ${l.make} ${l.model}</div>
+      <div class="detail-price mono">$${l.price.toLocaleString()}</div>
+      <div class="spec-sheet">
+        <div class="spec-sheet-row"><span>Year</span><span>${l.year}</span></div>
+        <div class="spec-sheet-row"><span>Mileage</span><span>${l.mileage.toLocaleString()} mi</span></div>
+        <div class="spec-sheet-row"><span>Location</span><span>${l.location}</span></div>
+      </div>
+      <div class="description">${l.desc}</div>
+      <div class="contact-panel">
+        <h4>Seller</h4>
+        <div class="seller-row">
+          <div class="seller-avatar">${initials}</div>
+          <div>
+            <div class="seller-name">${l.seller}</div>
+            <div class="seller-loc">${l.location}</div>
+          </div>
+        </div>
+        <button class="btn-contact" onclick="revealContact()">Contact seller</button>
+        <div class="reveal-info" id="revealInfo">Message sending isn't wired up in this prototype yet — in the real app, this opens a chat with the seller.</div>
+      </div>
+    </div>
+  `;
+  goTo('detail');
+}
+
+function revealContact(){
+  document.getElementById('revealInfo').classList.add('show');
+}
+
+function renderColorPicker(){
+  const wrap = document.getElementById('colorPicker');
+  wrap.innerHTML = COLORS.map((c,i)=>`
+    <div class="color-swatch ${i===0?'selected':''}" style="background:${c.hex}" data-hex="${c.hex}" onclick="selectColor(this)" title="${c.name}"></div>
+  `).join('');
+  wrap.dataset.selected = COLORS[0].hex;
+}
+function selectColor(el){
+  document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('colorPicker').dataset.selected = el.dataset.hex;
+}
+
+async function submitListing(e){
+  e.preventDefault();
+  const newListing = {
+    id: 'u'+Date.now(),
+    make: document.getElementById('in-make').value,
+    model: document.getElementById('in-model').value,
+    year: parseInt(document.getElementById('in-year').value),
+    price: parseFloat(document.getElementById('in-price').value),
+    mileage: parseFloat(document.getElementById('in-mileage').value),
+    location: document.getElementById('in-location').value,
+    color: document.getElementById('colorPicker').dataset.selected,
+    desc: document.getElementById('in-desc').value,
+    seller: 'You',
+    tag: 'new',
+    posted: 0,
+  };
+
+  let stored = [];
+  try{
+    const res = await window.storage.get('user-listings', false);
+    if(res && res.value) stored = JSON.parse(res.value);
+  }catch(err){ stored = []; }
+  stored.unshift(newListing);
+  await saveListings(stored);
+
+  LISTINGS = [...stored, ...SAMPLE_LISTINGS];
+  populateMakeFilter();
+
+  document.getElementById('successBanner').classList.add('show');
+  document.getElementById('postForm').reset();
+  renderColorPicker();
+  setTimeout(()=>{
+    document.getElementById('successBanner').classList.remove('show');
+    goTo('browse');
+    renderGrid();
+  }, 1400);
+}
+
+function goTo(view){
+  document.getElementById('view-browse').classList.toggle('hidden', view!=='browse');
+  document.getElementById('view-detail').classList.toggle('hidden', view!=='detail');
+  document.getElementById('view-post').classList.toggle('hidden', view!=='post');
+  window.scrollTo(0,0);
+}
+
+renderColorPicker();
+loadListings();
+</script>
+
+</body>
+</html>

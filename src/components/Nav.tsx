@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { signOutAction } from "@/lib/auth/actions";
 import { LogoIcon } from "./icons";
 import { SearchBox } from "./SearchBox";
 
@@ -47,6 +48,14 @@ export async function Nav() {
           <Link href="/account" className="whitespace-nowrap text-sm font-semibold text-paper hover:underline">
             Account
           </Link>
+          <form action={signOutAction}>
+            <button
+              type="submit"
+              className="whitespace-nowrap rounded-md border border-[#3a3d42] px-3 py-1.5 text-sm font-semibold text-paper hover:bg-[#232629]"
+            >
+              Log out
+            </button>
+          </form>
         </div>
       ) : (
         <Link

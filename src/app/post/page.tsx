@@ -13,7 +13,7 @@ export default async function PostPage() {
   }
 
   return (
-    <div className="mx-auto max-w-xl px-6 py-16">
+    <div className="mx-auto max-w-xl">
       <h1 className="font-display text-4xl font-extrabold leading-none">Post a listing</h1>
       <p className="mb-7 mt-1.5 text-[#5a5d61]">
         Fill in the details below. It&apos;s saved right away — payment (coming

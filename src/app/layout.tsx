@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Big_Shoulders, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import { Nav } from "@/components/Nav";
 import "./globals.css";
 
 const bigShoulders = Big_Shoulders({
@@ -32,7 +33,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="en"
       className={`${bigShoulders.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <Nav />
+        <main className="mx-auto w-full max-w-[1180px] flex-1 px-6 py-8">{children}</main>
+      </body>
     </html>
   );
 }

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PhotoGallery } from "./PhotoGallery";
 import { ContactSellerPanel } from "./ContactSellerPanel";
+import { FavoriteButton } from "@/components/FavoriteButton";
 
 const PHOTO_URL_TTL_SECONDS = 60 * 60;
 
@@ -52,6 +53,18 @@ export default async function ListingDetailPage({
   }
 
   const isOwner = user?.id === listing.seller_id;
+
+  let isFavorited = false;
+  if (user && !isOwner) {
+    const { data: favorite } = await supabase
+      .from("favorites")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .eq("listing_id", listing.id)
+      .maybeSingle();
+    isFavorited = !!favorite;
+  }
+
   const color = listing.color ?? "#2B2E33";
   const sellerName = seller?.display_name ?? "Unknown seller";
   const initials: string =
@@ -86,9 +99,19 @@ export default async function ListingDetailPage({
             alt={`${listing.year} ${listing.make} ${listing.model}`}
           />
 
-          <h1 className="mt-4 font-display text-[34px] font-extrabold leading-[1.05]">
-            {listing.year} {listing.make} {listing.model}
-          </h1>
+          <div className="mt-4 flex items-start justify-between gap-3">
+            <h1 className="font-display text-[34px] font-extrabold leading-[1.05]">
+              {listing.year} {listing.make} {listing.model}
+            </h1>
+            {!isOwner && (
+              <FavoriteButton
+                listingId={listing.id}
+                currentUserId={user?.id ?? null}
+                initialFavorited={isFavorited}
+                size="lg"
+              />
+            )}
+          </div>
           <div className="mb-4.5 font-mono text-2xl font-semibold text-signal-dark">
             ${listing.price.toLocaleString()}
           </div>

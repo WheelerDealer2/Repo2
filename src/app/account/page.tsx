@@ -5,6 +5,7 @@ import { signOutAction } from "@/lib/auth/actions";
 import { createCheckoutSessionAction } from "@/lib/stripe/actions";
 import { MarkSoldButton } from "@/components/MarkSoldButton";
 import { DeleteListingButton } from "@/components/DeleteListingButton";
+import { RemoveFavoriteButton } from "@/components/RemoveFavoriteButton";
 
 export default async function AccountPage() {
   const supabase = await createClient();
@@ -29,6 +30,24 @@ export default async function AccountPage() {
     .order("created_at", { ascending: false });
 
   const myListings = listings ?? [];
+
+  const { data: favoriteRows } = await supabase
+    .from("favorites")
+    .select("listing_id")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  const favoriteListingIds = (favoriteRows ?? []).map((f) => f.listing_id);
+  let myFavorites: { id: string; make: string; model: string; year: number; price: number; status: string }[] = [];
+  if (favoriteListingIds.length > 0) {
+    const { data } = await supabase
+      .from("listings")
+      .select("id, make, model, year, price, status")
+      .in("id", favoriteListingIds);
+    // Preserve favorited order (most recently saved first), not query order.
+    const byId = new Map((data ?? []).map((l) => [l.id, l]));
+    myFavorites = favoriteListingIds.map((id) => byId.get(id)).filter((l) => !!l);
+  }
 
   return (
     <div className="mx-auto max-w-xl">
@@ -82,6 +101,33 @@ export default async function AccountPage() {
                     {l.status === "active" && <MarkSoldButton listingId={l.id} />}
                     <DeleteListingButton listingId={l.id} label={`${l.year} ${l.make} ${l.model}`} />
                   </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {myFavorites.length > 0 && (
+          <div className="mt-6 border-t border-line pt-4">
+            <p className="mb-2 text-sm font-semibold text-asphalt">Favorites</p>
+            <ul className="space-y-2">
+              {myFavorites.map((l) => (
+                <li
+                  key={l.id}
+                  className="flex items-center justify-between gap-2 rounded-md border border-line px-3 py-2.5 text-sm"
+                >
+                  <Link href={`/listing/${l.id}`} className="min-w-0 flex-1 hover:underline">
+                    <span className="font-mono font-semibold">
+                      {l.year} {l.make} {l.model}
+                    </span>
+                    <span className="ml-2 font-mono text-signal-dark">${l.price.toLocaleString()}</span>
+                    {l.status !== "active" && (
+                      <span className="ml-2 rounded bg-paper-dim px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-asphalt">
+                        {l.status.replace("_", " ")}
+                      </span>
+                    )}
+                  </Link>
+                  <RemoveFavoriteButton userId={user.id} listingId={l.id} />
                 </li>
               ))}
             </ul>

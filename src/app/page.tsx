@@ -29,6 +29,9 @@ export default async function BrowsePage({
   const sort = sp.sort ?? "newest";
 
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   let query = supabase
     .from("listings")
@@ -104,12 +107,23 @@ export default async function BrowsePage({
     }
   }
 
+  let favoritedIds = new Set<string>();
+  if (user && listingIds.length > 0) {
+    const { data: favorites } = await supabase
+      .from("favorites")
+      .select("listing_id")
+      .eq("user_id", user.id)
+      .in("listing_id", listingIds);
+    favoritedIds = new Set((favorites ?? []).map((f) => f.listing_id));
+  }
+
   // eslint-disable-next-line react-hooks/purity -- async Server Component, evaluated once per request server-side; no client memoization applies
   const now = Date.now();
   const NEW_WINDOW_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
   const cards: ListingCardData[] = results.map((l) => ({
     ...l,
     isNew: now - new Date(l.created_at).getTime() < NEW_WINDOW_MS,
+    isFavorited: favoritedIds.has(l.id),
     photoUrl: photoByListingId.get(l.id) ?? null,
   }));
 
@@ -147,7 +161,7 @@ export default async function BrowsePage({
         ) : (
           <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-2 lg:grid-cols-3">
             {cards.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
+              <ListingCard key={listing.id} listing={listing} currentUserId={user?.id ?? null} />
             ))}
           </div>
         )}

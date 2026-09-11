@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { signOutAction } from "@/lib/auth/actions";
+import { createCheckoutSessionAction } from "@/lib/stripe/actions";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -65,8 +66,20 @@ export default async function Home() {
                     <span className="font-mono">
                       {l.year} {l.make} {l.model}
                     </span>
-                    <span className="rounded bg-paper-dim px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-asphalt">
-                      {l.status.replace("_", " ")}
+                    <span className="flex items-center gap-2">
+                      <span className="rounded bg-paper-dim px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-asphalt">
+                        {l.status.replace("_", " ")}
+                      </span>
+                      {l.status === "pending_payment" && (
+                        <form action={createCheckoutSessionAction.bind(null, l.id)}>
+                          <button
+                            type="submit"
+                            className="rounded bg-signal px-2 py-0.5 text-xs font-semibold text-white hover:bg-signal-dark"
+                          >
+                            Pay to publish
+                          </button>
+                        </form>
+                      )}
                     </span>
                   </li>
                 ))}

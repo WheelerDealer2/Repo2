@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { createCheckoutSessionAction } from "@/lib/stripe/actions";
 
 const COLORS = [
   { name: "Charcoal", hex: "#2B2E33" },
@@ -21,12 +21,11 @@ function sanitizeFilename(name: string) {
 }
 
 export function PostForm({ sellerId }: { sellerId: string }) {
-  const router = useRouter();
   const [color, setColor] = useState(COLORS[0].hex);
   const [photos, setPhotos] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<{ make: string; model: string; photoCount: number } | null>(null);
+  const [readyToPay, setReadyToPay] = useState<{ id: string; make: string; model: string } | null>(null);
 
   // Object URLs derived from the current file list; revoked whenever the
   // list changes or the form unmounts, so we don't leak memory.
@@ -91,7 +90,6 @@ export function PostForm({ sellerId }: { sellerId: string }) {
       return;
     }
 
-    let uploadedCount = 0;
     const uploadErrors: string[] = [];
 
     for (let i = 0; i < photos.length; i++) {
@@ -115,28 +113,47 @@ export function PostForm({ sellerId }: { sellerId: string }) {
         uploadErrors.push(`${file.name}: ${photoRowError.message}`);
         continue;
       }
-
-      uploadedCount++;
     }
-
-    setSubmitting(false);
 
     if (uploadErrors.length > 0) {
+      // Don't auto-redirect past an error the user hasn't seen — let them
+      // read it and continue to payment manually. The listing itself is
+      // already saved either way.
+      setSubmitting(false);
       setError(
-        `Listing saved, but ${uploadErrors.length} photo(s) failed to upload: ${uploadErrors.join("; ")}`,
+        `Listing saved, but ${uploadErrors.length} photo(s) failed to upload: ${uploadErrors.join("; ")}. ` +
+          "You can still continue to payment below.",
       );
+      setReadyToPay({ id: listing.id, make: listing.make, model: listing.model });
+      return;
     }
 
-    setSuccess({ make: listing.make, model: listing.model, photoCount: uploadedCount });
-    router.refresh();
+    // Straight to Stripe Checkout — createCheckoutSessionAction redirects
+    // on success, so nothing after this call normally runs.
+    await createCheckoutSessionAction(listing.id);
+    setSubmitting(false);
   }
 
-  if (success) {
+  if (readyToPay) {
     return (
-      <div className="rounded-md border border-[#a9d4a9] bg-[#E8F4E8] px-4 py-3 text-sm font-semibold text-[#2c5c2c]">
-        Listing created: {success.make} {success.model} ({success.photoCount} photo
-        {success.photoCount === 1 ? "" : "s"} uploaded). It&apos;s saved as a draft —
-        payment to make it live is coming in the next step.
+      <div className="space-y-3">
+        {error && (
+          <div className="rounded-md border border-rust/40 bg-rust/10 px-4 py-3 text-sm font-medium text-rust">
+            {error}
+          </div>
+        )}
+        <button
+          type="button"
+          disabled={submitting}
+          onClick={async () => {
+            setSubmitting(true);
+            await createCheckoutSessionAction(readyToPay.id);
+            setSubmitting(false);
+          }}
+          className="rounded-md bg-ink px-7 py-3 font-semibold text-white hover:bg-black disabled:opacity-60"
+        >
+          {submitting ? "Redirecting…" : `Continue to payment for ${readyToPay.make} ${readyToPay.model}`}
+        </button>
       </div>
     );
   }

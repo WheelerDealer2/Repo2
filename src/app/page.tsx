@@ -9,6 +9,7 @@ export default async function Home() {
   } = await supabase.auth.getUser();
 
   let displayName: string | null = null;
+  let myListings: { id: string; make: string; model: string; year: number; status: string }[] = [];
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
@@ -16,6 +17,13 @@ export default async function Home() {
       .eq("id", user.id)
       .single();
     displayName = profile?.display_name ?? null;
+
+    const { data: listings } = await supabase
+      .from("listings")
+      .select("id, make, model, year, status")
+      .eq("seller_id", user.id)
+      .order("created_at", { ascending: false });
+    myListings = listings ?? [];
   }
 
   return (
@@ -31,14 +39,40 @@ export default async function Home() {
           <p className="text-sm text-[#5a5d61]">Logged in as</p>
           <p className="font-mono text-lg font-semibold">{displayName ?? user.email}</p>
           <p className="mt-0.5 text-sm text-[#5a5d61]">{user.email}</p>
-          <form action={signOutAction} className="mt-4">
-            <button
-              type="submit"
-              className="rounded-md border border-line px-4 py-2 text-sm font-semibold text-asphalt hover:bg-paper-dim"
+          <div className="mt-4 flex gap-3">
+            <Link
+              href="/post"
+              className="rounded-md bg-signal px-4 py-2 text-sm font-semibold text-white hover:bg-signal-dark"
             >
-              Log out
-            </button>
-          </form>
+              + Post a listing
+            </Link>
+            <form action={signOutAction}>
+              <button
+                type="submit"
+                className="rounded-md border border-line px-4 py-2 text-sm font-semibold text-asphalt hover:bg-paper-dim"
+              >
+                Log out
+              </button>
+            </form>
+          </div>
+
+          {myListings.length > 0 && (
+            <div className="mt-6 border-t border-line pt-4">
+              <p className="mb-2 text-sm font-semibold text-asphalt">Your listings</p>
+              <ul className="space-y-1.5">
+                {myListings.map((l) => (
+                  <li key={l.id} className="flex items-center justify-between text-sm">
+                    <span className="font-mono">
+                      {l.year} {l.make} {l.model}
+                    </span>
+                    <span className="rounded bg-paper-dim px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-asphalt">
+                      {l.status.replace("_", " ")}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       ) : (
         <div className="flex gap-3">
